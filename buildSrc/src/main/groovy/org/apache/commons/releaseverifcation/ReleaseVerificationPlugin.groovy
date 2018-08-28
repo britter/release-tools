@@ -2,8 +2,20 @@ package org.apache.commons.releaseverifcation
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.workers.IsolationMode
+import org.gradle.workers.WorkerConfiguration
+import org.gradle.workers.WorkerExecutor
+
+import javax.inject.Inject
 
 class ReleaseVerificationPlugin implements Plugin<Project> {
+
+    private WorkerExecutor workerExecutor
+
+    @Inject
+    ReleaseVerificationPlugin(WorkerExecutor workerExecutor) {
+        this.workerExecutor = workerExecutor
+    }
 
     @Override
     void apply(final Project project) {
@@ -13,11 +25,14 @@ class ReleaseVerificationPlugin implements Plugin<Project> {
             doLast {
                 def component = extension.baseUrl.split('/')[-1]
 
-                println "Getting artifacts for $component"
+                project.logger.info("Getting artifacts for $component")
 
                 def baseDir = project.mkdir(new File(project.buildDir, component))
 
-                new File(baseDir,'RELEASE-NOTES.txt') << new URL ("${extension.baseUrl}/RELEASE-NOTES.txt").getText()
+                workerExecutor.submit(GetFile.class) { WorkerConfiguration config ->
+                    config.isolationMode = IsolationMode.NONE
+                    config.params new URL ("${extension.baseUrl}/RELEASE-NOTES.txt"), new File(baseDir,'RELEASE-NOTES.txt')
+                }
 
                 getArtifacts(extension.baseUrl, 'binaries', baseDir)
                 getArtifacts(extension.baseUrl, 'source', baseDir)
@@ -40,8 +55,9 @@ class ReleaseVerificationPlugin implements Plugin<Project> {
     def getArtifact(String url, File target) {
         println "Saving $url to $target"
 
-        def file = target.newOutputStream()
-        file << new URL(url).openStream()
-        file.close()
+        workerExecutor.submit(GetFile.class) { WorkerConfiguration config ->
+            config.isolationMode = IsolationMode.NONE
+            config.params new URL(url), target
+        }
     }
 }
