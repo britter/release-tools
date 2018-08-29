@@ -3,5 +3,5 @@ import org.apache.commons.releaseverifcation.ReleaseVerificationPlugin
 apply plugin: ReleaseVerificationPlugin
 
 distribution {
-    baseUrl = 'https://dist.apache.org/repos/dist/dev/commons/jcs/'
+    component = 'jcs'
 }

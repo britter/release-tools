@@ -2,62 +2,35 @@ package org.apache.commons.releaseverifcation
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.workers.IsolationMode
-import org.gradle.workers.WorkerConfiguration
-import org.gradle.workers.WorkerExecutor
-
-import javax.inject.Inject
 
 class ReleaseVerificationPlugin implements Plugin<Project> {
 
-    private WorkerExecutor workerExecutor
-
-    @Inject
-    ReleaseVerificationPlugin(WorkerExecutor workerExecutor) {
-        this.workerExecutor = workerExecutor
-    }
+    public static final String PLUGIN_TASK_GROUP = 'Release verification'
 
     @Override
     void apply(final Project project) {
-        def extension = project.extensions.create('distribution', DistributionExtension)
+        def extension = project.extensions.create('distribution', DistributionExtension, project)
 
-        project.task('getArtifacts') {
-            doLast {
-                def component = extension.baseUrl.split('/')[-1]
-
-                project.logger.info("Getting artifacts for $component")
-
-                def baseDir = project.mkdir(new File(project.buildDir, component))
-
-                workerExecutor.submit(GetFile.class) { WorkerConfiguration config ->
-                    config.isolationMode = IsolationMode.NONE
-                    config.params new URL ("${extension.baseUrl}/RELEASE-NOTES.txt"), new File(baseDir,'RELEASE-NOTES.txt')
-                }
-
-                getArtifacts(extension.baseUrl, 'binaries', baseDir)
-                getArtifacts(extension.baseUrl, 'source', baseDir)
-            }
+        def grabReleaseNotes = project.tasks.create('grabReleaseNotes', GrabReleaseNotesTask) {
+            group = PLUGIN_TASK_GROUP
+            component = extension.component
         }
-    }
 
-    def getArtifacts(String baseUrl, String subUrl, File baseDir) {
-        def response = new XmlSlurper().parseText(new URL ("$baseUrl/$subUrl").getText())
-
-        response.body.ul.li.each { li ->
-            def artifact = "${li.a.@href}"
-            if(artifact != "../") {
-                def artifactUrl = "$baseUrl/$subUrl/$artifact"
-                getArtifact(artifactUrl, new File(baseDir, artifact))
-            }
+        def grabBinaries = project.tasks.create('grabBinaries', GrabArtifactsTask) {
+            group = PLUGIN_TASK_GROUP
+            description = "Grabs the binary artifacts from the binaries artifacts page and downloads them"
+            component = extension.component
+            type = ArtifactsType.BINARIES
         }
-    }
 
-    def getArtifact(String url, File target) {
-        println "Saving $url to $target"
-
-        workerExecutor.submit(GetFile.class) { WorkerConfiguration config ->
-            config.isolationMode = IsolationMode.NONE
-            config.params new URL(url), target
+        def grabSource = project.tasks.create('grabSource', GrabArtifactsTask) {
+            group = PLUGIN_TASK_GROUP
+            description = "Grabs the source artifacts from the source artifacts page and downloads them"
+            component = extension.component
+            type = ArtifactsType.SOURCE
         }
+
+        project.task('verify', group: PLUGIN_TASK_GROUP, description: 'Executes the full release verification logic')
+                .dependsOn(grabReleaseNotes, grabBinaries, grabSource)
     }
 }
