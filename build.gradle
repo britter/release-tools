@@ -1,7 +1,50 @@
-import org.apache.commons.releaseverifcation.ReleaseVerificationPlugin
+import de.undercouch.gradle.tasks.download.Download
+import org.apache.ivy.util.url.ApacheURLLister
 
-apply plugin: ReleaseVerificationPlugin
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'de.undercouch:gradle-download-task:3.4.3'
+        classpath 'org.apache.ivy:ivy:2.3.0'
+    }
+}
 
-distribution {
-    component = 'jcs'
+apply plugin: 'de.undercouch.download'
+apply plugin: 'base'
+
+def taskGroup = 'Release Verification'
+def component = distArea.split('/')[-1]
+def verificationDir = mkdir("$buildDir/$component")
+
+task downloadReleaseNotes(type: Download) {
+    group = taskGroup
+    description = 'Downloads the RELEASE-NOTES.txt file'
+    src "$distArea/RELEASE-NOTES.txt"
+    dest verificationDir
+}
+
+task downloadSource(type: Download) {
+    group = taskGroup
+    description = 'Downloads the source artifacts'
+    src listFiles("$distArea/source")
+    dest mkdir("$verificationDir/source")
+}
+
+task downloadBinaries(type: Download) {
+    group = taskGroup
+    description = 'Downloads the binary artifacts'
+    src listFiles("$distArea/binaries")
+    dest mkdir("$verificationDir/binaries")
+}
+
+task downloadDistArtifacts(dependsOn: [downloadReleaseNotes, downloadSource, downloadBinaries]) {
+    group = taskGroup
+    description = 'Downloads all artifacts from the distribution area'
+}
+
+def static listFiles(String url) {
+    def urlLister = new ApacheURLLister()
+    return urlLister.listFiles(new URL(url))
 }

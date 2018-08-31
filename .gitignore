@@ -16,4 +16,6 @@ gradle-app.setting
 # # Work around https://youtrack.jetbrains.com/issue/IDEA-116898
 # gradle/wrapper/gradle-wrapper.properties
 
+# ignore gradle.properties since these will change with each release verification
+gradle.properties
 
