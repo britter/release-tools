@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import de.undercouch.gradle.tasks.download.Download
+import at.bxm.gradleplugins.svntools.tasks.SvnCheckout
 import org.apache.ivy.util.url.ApacheURLLister
 
 buildscript {
@@ -23,17 +23,20 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'de.undercouch:gradle-download-task:3.4.3'
         classpath 'org.apache.ivy:ivy:2.3.0'
     }
 }
 
-apply plugin: 'de.undercouch.download'
+plugins {
+    id "de.undercouch.download" version "3.4.3"
+    id "at.bxm.svntools" version "2.2.1"
+}
+
 apply plugin: 'base'
 
 def taskGroup = 'Release Verification'
-def component = distArea.split('/')[-1]
-def verificationDir = mkdir("$buildDir/$component")
+def verificationDir = mkdir("$buildDir/dist")
+def releaseTagDir = mkdir("$buildDir/tag")
 
 task downloadReleaseNotes(type: Download) {
     group = taskGroup
@@ -59,6 +62,13 @@ task downloadBinaries(type: Download) {
 task downloadDistArtifacts(dependsOn: [downloadReleaseNotes, downloadSource, downloadBinaries]) {
     group = taskGroup
     description = 'Downloads all artifacts from the distribution area'
+}
+
+task checkoutSvnReleaseTag(type: SvnCheckout) {
+    group taskGroup
+    description = 'Checks out the SVN release tag'
+    svnUrl = tag
+    workspaceDir = releaseTagDir
 }
 
 task verifyRelease(dependsOn: downloadDistArtifacts) {
