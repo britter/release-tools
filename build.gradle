@@ -61,6 +61,11 @@ task downloadDistArtifacts(dependsOn: [downloadReleaseNotes, downloadSource, dow
     description = 'Downloads all artifacts from the distribution area'
 }
 
+task verifyRelease(dependsOn: downloadDistArtifacts) {
+    group = taskGroup
+    description = 'Executes the whole release verification logic'
+}
+
 def static listFiles(String url) {
     def urlLister = new ApacheURLLister()
     return urlLister.listFiles(new URL(url))
