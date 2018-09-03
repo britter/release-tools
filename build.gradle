@@ -16,6 +16,7 @@
  */
 
 import at.bxm.gradleplugins.svntools.tasks.SvnCheckout
+import org.apache.commons.io.FileUtils
 import org.apache.ivy.util.url.ApacheURLLister
 
 buildscript {
@@ -24,6 +25,7 @@ buildscript {
     }
     dependencies {
         classpath 'org.apache.ivy:ivy:2.3.0'
+        classpath 'commons-io:commons-io:2.6'
     }
 }
 
@@ -71,7 +73,20 @@ task checkoutSvnReleaseTag(type: SvnCheckout) {
     workspaceDir = releaseTagDir
 }
 
-task verifyRelease(dependsOn: downloadDistArtifacts) {
+task compareReleaseNotes(dependsOn: [downloadReleaseNotes, checkoutSvnReleaseTag]) {
+    group taskGroup
+    description = 'Compares RELEASE-NOTES.txt from the dist area with those from the release tage'
+    doLast {
+        def distReleaseNotes = file("$verificationDir/RELEASE-NOTES.txt")
+        def tagReleaseNotes = file("$releaseTagDir/RELEASE-NOTES.txt")
+        def releaseNotesEqual = FileUtils.contentEquals(distReleaseNotes, tagReleaseNotes)
+        if (!releaseNotesEqual) {
+            throw new GradleException("RELEASE-NOTES.txt from release tag and dist area are not the same!");
+        }
+    }
+}
+
+task verifyRelease(dependsOn: [downloadDistArtifacts, compareReleaseNotes]) {
     group = taskGroup
     description = 'Executes the whole release verification logic'
 }

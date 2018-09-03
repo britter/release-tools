@@ -30,8 +30,10 @@ To clear the whole output use the `clean` task.
 - [ ] Verify SHA check sums
 - [ ] Build release from source archive
 - [ ] Checkout release tag
+ - [x] SVN
+ - [ ] git
 - [ ] Compare contents of source archive with contents of release tag
-- [ ] Compare RELEASE-NOTES from dist are with RELEASE-NOTES from release tag
+- [x] Compare RELEASE-NOTES from dist are with RELEASE-NOTES from release tag
 - [ ] Check that year in NOTICE file is the current year
 
 ## Contribution policy
