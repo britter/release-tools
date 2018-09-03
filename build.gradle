@@ -39,7 +39,8 @@ apply plugin: 'base'
 def taskGroup = 'Release Verification'
 def verificationDir = mkdir("$buildDir/release-verification")
 def distDir = mkdir("$verificationDir/dist")
-def releaseTagDir = mkdir("$verificationDir//tag")
+def releaseTagDir = mkdir("$verificationDir/tag")
+def component = distArea.split('/')[-1]
 
 task downloadReleaseNotes(type: Download) {
     group = taskGroup
@@ -65,6 +66,16 @@ task downloadBinaries(type: Download) {
 task downloadDistArtifacts(dependsOn: [downloadReleaseNotes, downloadSource, downloadBinaries]) {
     group = taskGroup
     description = 'Downloads all artifacts from the distribution area'
+}
+
+task extractSource(type: Copy, dependsOn: downloadSource) {
+    group = taskGroup
+    description = 'Extracts the source archive'
+
+    def sourceArchive = file("$distDir/source/").listFiles().findAll { File f -> f.name.endsWith('-src.tar.gz') }.first()
+
+    from tarTree(resources.gzip(sourceArchive))
+    into "$verificationDir/sourceArchiveContents"
 }
 
 task checkoutSvnReleaseTag(type: SvnCheckout) {

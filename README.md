@@ -28,10 +28,10 @@ To clear the whole output use the `clean` task.
 - [ ] Download artifacts from Maven staging repo
 - [ ] Verify gpg signatures
 - [ ] Verify SHA check sums
+- [x] Extract the source archive
 - [ ] Build release from source archive
-- [ ] Checkout release tag
- - [x] SVN
- - [ ] git
+- [x] Checkout release tag from svn
+- [ ] Checkout release tag from git
 - [ ] Compare contents of source archive with contents of release tag
 - [x] Compare RELEASE-NOTES from dist are with RELEASE-NOTES from release tag
 - [ ] Check that year in NOTICE file is the current year
