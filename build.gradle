@@ -37,28 +37,29 @@ plugins {
 apply plugin: 'base'
 
 def taskGroup = 'Release Verification'
-def verificationDir = mkdir("$buildDir/dist")
-def releaseTagDir = mkdir("$buildDir/tag")
+def verificationDir = mkdir("$buildDir/release-verification")
+def distDir = mkdir("$verificationDir/dist")
+def releaseTagDir = mkdir("$verificationDir//tag")
 
 task downloadReleaseNotes(type: Download) {
     group = taskGroup
     description = 'Downloads the RELEASE-NOTES.txt file'
     src "$distArea/RELEASE-NOTES.txt"
-    dest verificationDir
+    dest distDir
 }
 
 task downloadSource(type: Download) {
     group = taskGroup
     description = 'Downloads the source artifacts'
     src listFiles("$distArea/source")
-    dest mkdir("$verificationDir/source")
+    dest mkdir("$distDir/source")
 }
 
 task downloadBinaries(type: Download) {
     group = taskGroup
     description = 'Downloads the binary artifacts'
     src listFiles("$distArea/binaries")
-    dest mkdir("$verificationDir/binaries")
+    dest mkdir("$distDir/binaries")
 }
 
 task downloadDistArtifacts(dependsOn: [downloadReleaseNotes, downloadSource, downloadBinaries]) {
@@ -77,7 +78,7 @@ task compareReleaseNotes(dependsOn: [downloadReleaseNotes, checkoutSvnReleaseTag
     group taskGroup
     description = 'Compares RELEASE-NOTES.txt from the dist area with those from the release tage'
     doLast {
-        def distReleaseNotes = file("$verificationDir/RELEASE-NOTES.txt")
+        def distReleaseNotes = file("$distDir/RELEASE-NOTES.txt")
         def tagReleaseNotes = file("$releaseTagDir/RELEASE-NOTES.txt")
         def releaseNotesEqual = FileUtils.contentEquals(distReleaseNotes, tagReleaseNotes)
         if (!releaseNotesEqual) {
