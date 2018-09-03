@@ -32,6 +32,7 @@ buildscript {
 plugins {
     id "de.undercouch.download" version "3.4.3"
     id "at.bxm.svntools" version "2.2.1"
+    id "com.github.dkorotych.gradle-maven-exec" version "2.0"
 }
 
 apply plugin: 'base'
@@ -68,7 +69,7 @@ task downloadDistArtifacts(dependsOn: [downloadReleaseNotes, downloadSource, dow
     description = 'Downloads all artifacts from the distribution area'
 }
 
-task extractSource(type: Copy, dependsOn: downloadSource) {
+task extractSourceArchive(type: Copy, dependsOn: downloadSource) {
     group = taskGroup
     description = 'Extracts the source archive'
 
@@ -76,6 +77,14 @@ task extractSource(type: Copy, dependsOn: downloadSource) {
 
     from tarTree(resources.gzip(sourceArchive))
     into "$verificationDir/sourceArchiveContents"
+}
+
+task buildFromSource(type: MavenExec, dependsOn: extractSourceArchive) {
+    group taskGroup
+    description = 'Build from dist area source'
+
+    goals 'clean', 'verify'
+    workingDir file("$verificationDir/sourceArchiveContents").listFiles().first();
 }
 
 task checkoutSvnReleaseTag(type: SvnCheckout) {
@@ -98,7 +107,7 @@ task compareReleaseNotes(dependsOn: [downloadReleaseNotes, checkoutSvnReleaseTag
     }
 }
 
-task verifyRelease(dependsOn: [downloadDistArtifacts, compareReleaseNotes]) {
+task verifyRelease(dependsOn: [downloadDistArtifacts, compareReleaseNotes, buildFromSource]) {
     group = taskGroup
     description = 'Executes the whole release verification logic'
 }

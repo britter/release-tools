@@ -29,7 +29,7 @@ To clear the whole output use the `clean` task.
 - [ ] Verify gpg signatures
 - [ ] Verify SHA check sums
 - [x] Extract the source archive
-- [ ] Build release from source archive
+- [x] Build release from source archive
 - [x] Checkout release tag from svn
 - [ ] Checkout release tag from git
 - [ ] Compare contents of source archive with contents of release tag
